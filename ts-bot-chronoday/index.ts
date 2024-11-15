@@ -2,6 +2,7 @@ import { BskyAgent } from '@atproto/api';
 import * as dotenv from 'dotenv';
 import { CronJob } from 'cron';
 import * as process from 'process';
+import { getYearProgress } from './yearProgress';
 
 dotenv.config();
 
@@ -12,11 +13,15 @@ const agent = new BskyAgent({
 
 
 async function main() {
+    const {year, progress, bar} = getYearProgress();
+    const message = `${year} is ${progress}% complete. \n${bar}`;    
+
     await agent.login({ identifier: process.env.BLUESKY_USERNAME!, password: process.env.BLUESKY_PASSWORD!})
     await agent.post({
-        text: "🙂"
+        text: message
     });
-    console.log("Just posted!")
+    
+    console.log("Posted message:", message)
 }
 
 main();
@@ -24,7 +29,7 @@ main();
 
 // Run this on a cron job
 const scheduleExpressionMinute = '* * * * *'; // Run once every minute for testing
-const scheduleExpression = '0 */3 * * *'; // Run once every three hours in prod
+const scheduleExpression = '0 0 * * *'; // PUblis every day at midnight
 
 const job = new CronJob(scheduleExpression, main); // change to scheduleExpressionMinute for testing
 

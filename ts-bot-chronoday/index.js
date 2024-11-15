@@ -27,21 +27,24 @@ const api_1 = require("@atproto/api");
 const dotenv = __importStar(require("dotenv"));
 const cron_1 = require("cron");
 const process = __importStar(require("process"));
+const yearProgress_1 = require("./yearProgress");
 dotenv.config();
 // Create a Bluesky Agent 
 const agent = new api_1.BskyAgent({
     service: 'https://bsky.social',
 });
 async function main() {
+    const { year, progress, bar } = (0, yearProgress_1.getYearProgress)();
+    const message = `${year} is ${progress}% complete. \n${bar}`;
     await agent.login({ identifier: process.env.BLUESKY_USERNAME, password: process.env.BLUESKY_PASSWORD });
     await agent.post({
-        text: "🙂"
+        text: message
     });
-    console.log("Just posted!");
+    console.log("Posted message:", message);
 }
 main();
 // Run this on a cron job
 const scheduleExpressionMinute = '* * * * *'; // Run once every minute for testing
-const scheduleExpression = '0 */3 * * *'; // Run once every three hours in prod
+const scheduleExpression = '0 0 * * *'; // PUblis every day at midnight
 const job = new cron_1.CronJob(scheduleExpression, main); // change to scheduleExpressionMinute for testing
 job.start();
