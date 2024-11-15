@@ -1,18 +1,59 @@
-# Bluesky Bot Tutorial
+# Chronodate 🕰️
+A simple yet awesome Bluesky bot to track the progress of the year!
 
-This folder contains a starter template for creating a bot on Bluesky. In this example, the bot posts a smiley emoji on an automated schedule once every three hours.
+Follow the bot on [Bluesky](https://bsky.app/profile/chronodate.bsky.social): @chronodate.bsky.social.
 
-## Set Up
+And feel free to follow me, the creator, at [Bluesky](https://bsky.app/profile/poullorca.bsky.social): @poullorca.bsky.social.
 
-1. Install Typescript: `npm i -g typescript`
-2. Install Node.js: `npm i -g ts-node`
-3. Make a copy of the example `.env` file by running: `cp example.env .env`. Set your username and password in `.env`. Use an App Password.
-4. Compile your project by running: `npx tsc` or activate watch mode to have your code automatically compile: `npx tsc -w`
+## What's this all about? 🤔
+Chronodate is a fun bot that posts the current year's progress every single day.
+Something like:
+```
+2024 is 87% complete.
 
-## Running the script 
-1. You can run the script locally: `node index.js`. You should see a smiley emoji posted to your Bluesky account. 
-2. Modify the script however you like to make this bot your own! 
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░
+```
+That's it for now! But I'm already planning some cool updates:
 
-## Deploying your bot
-1. You can deploy a simple bot for free or low cost on a variety of platforms. For example, check out [Heroku](https://devcenter.heroku.com/articles/github-integration) or [Fly.io](https://fly.io/docs/reference/fly-launch/).
+* **Memory features**: Let the bot "remember" and reference past posts or interactions.
+* **Advanced interactions**: Think reminders or custom responses!
+* **A basic website**: Because why not? Every bot deserves a home.
+  
+For now, I'm just happy to share this project with the world.
+
+## Why make this public? 💡
+Honestly, this is an act of good faith. I believe in sharing fun, creative ideas with the community, and Chronodate felt like the perfect project to start with.
+
+If you're curious or want to contribute, you're more than welcome to jump in!
+
+## How to use this project 🛠️
+1. Clone the repo.
+2. Add your **Bluesky credentials** to a `.env` file:
+```
+BLUESKY_USERNAME=your_username
+BLUESKY_PASSWORD=your_password
+```
+3. Install the dependencies:
+```
+npm install
+```
+4. Build the project:
+```
+npm run build
+```
+5. Start the bot locally or deploy it wherever you like (e.g., Heroku):
+```
+npm start
+```
+
+## Future Plans 🚀
+This is just the beginning. I plan to add new features and make this bot smarter over time.
+
+Feel free to fork, contribute, or just follow the journey!
+
+## License 📜
+MIT License – Do whatever you want with this project, just be cool about it. 😎
+
+--- 
+Thanks for stopping by! Chronodate and I appreciate your support. 🙌
 
