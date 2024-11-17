@@ -34,3 +34,5 @@ const scheduleExpression = '0 0 * * *'; // PUblis every day at midnight
 const job = new CronJob(scheduleExpression, main); // change to scheduleExpressionMinute for testing
 
 job.start();
+
+console.log("Cron job started. Waiting for the next execution...");
