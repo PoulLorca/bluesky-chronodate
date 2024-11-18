@@ -48,3 +48,4 @@ const scheduleExpressionMinute = '* * * * *'; // Run once every minute for testi
 const scheduleExpression = '0 0 * * *'; // PUblis every day at midnight
 const job = new cron_1.CronJob(scheduleExpression, main); // change to scheduleExpressionMinute for testing
 job.start();
+console.log("Cron job started. Waiting for the next execution...");
