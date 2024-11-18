@@ -9,7 +9,7 @@ And feel free to follow me, the creator, at [Bluesky](https://bsky.app/profile/p
 Chronodate is a fun bot that posts the current year's progress every single day.
 Something like:
 ```
-2024 is 87% complete.
+2024 is 87,2% complete.
 
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░░░░░░░
 ```
