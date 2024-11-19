@@ -4,6 +4,7 @@ import { CronJob } from 'cron';
 import * as process from 'process';
 import { getYearProgress } from './yearProgress';
 import { listenMentions } from './mentionHandler';
+import { handleReminders } from './reminderHandler';
 
 dotenv.config();
 
@@ -33,8 +34,11 @@ async function main() {
 
     console.log("Bot logged in successfully.");
 
-    //Start to listent the mentions
+    //Listening the mentions
     await listenMentions(agent);
+
+    //Managing reminders
+    await handleReminders(agent);
 
     //Activate the cron job to post the year progress
     const scheduleExpression = '0 0 * * *'; // Publish every day at midnight    

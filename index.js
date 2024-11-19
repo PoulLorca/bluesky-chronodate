@@ -28,6 +28,7 @@ const dotenv = __importStar(require("dotenv"));
 const process = __importStar(require("process"));
 const yearProgress_1 = require("./yearProgress");
 const mentionHandler_1 = require("./mentionHandler");
+const reminderHandler_1 = require("./reminderHandler");
 dotenv.config();
 // Create a Bluesky Agent 
 const agent = new api_1.BskyAgent({
@@ -48,8 +49,10 @@ async function main() {
         password: process.env.BLUESKY_PASSWORD
     });
     console.log("Bot logged in successfully.");
-    //Start to listent the mentions
+    //Listening the mentions
     await (0, mentionHandler_1.listenMentions)(agent);
+    //Managing reminders
+    await (0, reminderHandler_1.handleReminders)(agent);
     //Activate the cron job to post the year progress
     const scheduleExpression = '0 0 * * *'; // Publish every day at midnight    
     //const job = new CronJob(scheduleExpression, postYearProgress); // change to scheduleExpressionMinute for testing    
