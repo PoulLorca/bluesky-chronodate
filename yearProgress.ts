@@ -4,7 +4,7 @@ export function getYearProgress(): {year: number; progress: string; bar: string}
     const endOfYear = new Date(now.getFullYear() + 1, 0, 1);
     const elapsed = now.getTime() - startOfYear.getTime();
     const total = endOfYear.getTime() - startOfYear.getTime();
-    const progress = Math.floor((elapsed / total) * 100).toFixed(1);
+    const progress = ((elapsed / total) * 100).toFixed(1);
 
 
     // Genearte ASCII progress bar
