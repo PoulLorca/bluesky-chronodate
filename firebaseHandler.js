@@ -44,17 +44,25 @@ const firebaseConfig = {
 };
 const app = (0, app_1.initializeApp)(firebaseConfig);
 const database = (0, database_1.getDatabase)(app);
-// Write a new record for a user 
-async function addReminder(userDid, requestId, data) {
-    await (0, database_1.set)((0, database_1.ref)(database, `reminders/${userDid}/${requestId}`), data);
+// Función para sanitizar las claves
+function sanitizeKey(key) {
+    return key.replace(/[.#$[\]/:]/g, '_');
 }
-// Verify if the request exists 
-async function reminderExists(userDid, requestId) {
+// Escribir un nuevo recordatorio para un usuario
+async function addReminder(userHandle, requestId, data) {
+    const sanitizedUserHandle = sanitizeKey(userHandle);
+    const sanitizedRequestId = sanitizeKey(requestId);
+    await (0, database_1.set)((0, database_1.ref)(database, `reminders/${sanitizedUserHandle}/${sanitizedRequestId}`), data);
+}
+// Verificar si el recordatorio existe
+async function reminderExists(userHandle, requestId) {
+    const sanitizedUserHandle = sanitizeKey(userHandle);
+    const sanitizedRequestId = sanitizeKey(requestId);
     const dbRef = (0, database_1.ref)(database);
-    const snapshot = await (0, database_1.get)((0, database_1.child)(dbRef, `reminders/${userDid}/${requestId}`));
+    const snapshot = await (0, database_1.get)((0, database_1.child)(dbRef, `reminders/${sanitizedUserHandle}/${sanitizedRequestId}`));
     return snapshot.exists();
 }
-//Get the records to notify
+// Obtener los recordatorios pendientes
 async function getPendingReminders() {
     const remindersRef = (0, database_1.ref)(database, "reminders");
     const snapshot = await (0, database_1.get)(remindersRef);
@@ -63,26 +71,29 @@ async function getPendingReminders() {
     }
     const reminders = snapshot.val();
     const pendingReminders = [];
-    //Filter the pending reminders
-    for (const userDid in reminders) {
-        for (const requestId in reminders[userDid]) {
-            const reminder = reminders[userDid][requestId];
-            if (!reminders.notificationSent && reminder.timestamp <= Date.now()) {
-                pendingReminders.push({ userDid, requestId, ...reminder });
+    // Filtrar los recordatorios pendientes
+    for (const userHandle in reminders) {
+        for (const requestId in reminders[userHandle]) {
+            const reminder = reminders[userHandle][requestId];
+            if (!reminder.notificationSent && reminder.timestamp <= Date.now()) {
+                pendingReminders.push({ userHandle, requestId, ...reminder });
             }
         }
     }
     return pendingReminders;
 }
-//Mark a reminder as sent
-async function markReminderAsSent(userDid, requestId) {
-    const reminderRef = (0, database_1.ref)(database, `reminders/${userDid}/${requestId}`);
+// Marcar un recordatorio como enviado
+async function markReminderAsSent(userHandle, requestId) {
+    const sanitizedUserHandle = sanitizeKey(userHandle);
+    const sanitizedRequestId = sanitizeKey(requestId);
+    const reminderRef = (0, database_1.ref)(database, `reminders/${sanitizedUserHandle}/${sanitizedRequestId}`);
     await (0, database_1.update)(reminderRef, { notificationSent: true });
 }
-//Count active reminders
-async function countActiveReminders(userDid) {
+// Contar los recordatorios activos
+async function countActiveReminders(userHandle) {
+    const sanitizedUserHandle = sanitizeKey(userHandle);
     const dbRef = (0, database_1.ref)(database);
-    const snapshot = await (0, database_1.get)((0, database_1.child)(dbRef, `reminders/${userDid}`));
+    const snapshot = await (0, database_1.get)((0, database_1.child)(dbRef, `reminders/${sanitizedUserHandle}`));
     if (!snapshot.exists()) {
         return 0;
     }

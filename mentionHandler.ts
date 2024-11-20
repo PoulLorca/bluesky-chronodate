@@ -4,36 +4,43 @@ import { addReminder, reminderExists, countActiveReminders } from "./firebaseHan
 const docsLink: string = "https://example.com/docs";
 const MAX_REMINDERS_PER_USER = 15;
 
+const processedNotifications = new Set<string>();
+
 export async function listenMentions(agent: BskyAgent) {
     console.log("Bot listening for mentions...");
 
     setInterval(async () => {
-        const notifications = await agent.listNotifications({ limit: 50 });
+        const notificationsResponse = await agent.listNotifications({ limit: 50 });
+        const notifications = notificationsResponse.data.notifications;
 
-        const mentions = notifications.data.notifications.filter(
+        let lastSeenAt = "";
+
+        const mentions = notifications.filter(
             (notification) => notification.reason === "mention" && notification.isRead === false
         );
 
         for (const mention of mentions) {
-            const userDid = mention.author.did;
+            const userHandle = mention.author.handle;
+            const notificationUri = mention.uri;
 
-            // Check if the user has reached the reminder limit
-            const activeReminders = await countActiveReminders(userDid);
+            if (processedNotifications.has(notificationUri)) {
+                console.log(`Notification ${notificationUri} already processed.`);
+                continue;
+            }
+            processedNotifications.add(notificationUri);
+
+            const activeReminders = await countActiveReminders(userHandle);
             if (activeReminders >= MAX_REMINDERS_PER_USER) {
-                console.warn(`User ${userDid} has reached the limit of ${MAX_REMINDERS_PER_USER} reminders.`);
-                await sendReply(agent, mention, `Sorry, you have reached the limit of ${MAX_REMINDERS_PER_USER} reminders.`);
+                console.warn(`User ${userHandle} has reached the limit of ${MAX_REMINDERS_PER_USER} reminders.`);
+                await sendReply(agent, mention, `Sorry @${userHandle} , you have reached the limit of ${MAX_REMINDERS_PER_USER} reminders.`);
                 continue;
             }
 
-            const notificationCid = mention.cid;
-
-            // Check if this reminder already exists
-            if (await reminderExists(userDid, notificationCid)) {
-                console.log(`Reminder ${notificationCid} already exists for user ${userDid}`);
+            if (await reminderExists(userHandle, notificationUri)) {
+                console.log(`Reminder ${notificationUri} already exists for user ${userHandle}`);
                 continue;
             }
 
-            // Validate the text and calculate the timestamp
             const text = extractTextFromRecord(mention.record);
             if (!text) {
                 console.warn(`No valid text found in record for mention ${mention.uri}`);
@@ -54,19 +61,23 @@ export async function listenMentions(agent: BskyAgent) {
                 notificationSent: false,
                 uri: mention.uri,
                 cid: mention.cid,
+                userHandle, // Añade el handle al recordatorio
             };
 
-            await addReminder(userDid, notificationCid, reminderData);
-            console.log(`Reminder ${notificationCid} added for user ${userDid}`);
+            await addReminder(userHandle, notificationUri, reminderData);
+            console.log(`Reminder ${notificationUri} added for user ${userHandle}`);
 
-            // Confirmation to user
-            await sendReply(agent, mention, `Sure! I will remind you on ${formatDate(timestamp)}`);
+            await sendReply(agent, mention, `Sure! @${userHandle} I will remind you on ${formatDate(timestamp)}`);
 
-            // Mark the notification as read
-            await markNotificationAsRead(agent, mention);
-            console.log(`Responded and marked as read for user ${userDid}`);
+            if (!lastSeenAt || mention.indexedAt > lastSeenAt) {
+                lastSeenAt = mention.indexedAt;
+            }
         }
-    }, 15000); // Check every 15 seconds
+
+        if (lastSeenAt) {
+            await markNotificationsAsRead(agent, lastSeenAt);
+        }
+    }, 30000); // Check every 30 seconds
 }
 
 function calculateTimestamp(text: string): number | null {
@@ -117,12 +128,13 @@ function extractTextFromRecord(record: unknown): string | null {
     return null;
 }
 
-async function markNotificationAsRead(agent: BskyAgent, mention: { uri: string; indexedAt: string }) {
+async function markNotificationsAsRead(agent: BskyAgent, seenAt: string) {
     try {
-        await agent.api.app.bsky.notification.updateSeen({ seenAt: mention.indexedAt });
-        console.log(`Notification ${mention.uri} marked as read`);
+        // Call the API to mark notifications as read up to `seenAt`
+        const response = await agent.api.app.bsky.notification.updateSeen({ seenAt });
+        console.log(`All notifications up to ${seenAt} marked as read.`);
     } catch (error) {
-        console.error(`Failed to mark notification ${mention.uri} as read`, error);
+        console.error(`Failed to mark notifications as read up to ${seenAt}`, error);
     }
 }
 
@@ -146,8 +158,8 @@ async function sendReply(agent: BskyAgent, mention: any, message: string) {
     }
 }
 
-//Format the date from a timestamp
-function formatDate(timestamp: number): string{
+// Format the date from a timestamp
+function formatDate(timestamp: number): string {
     const date = new Date(timestamp);
     return date.toLocaleString("en-US", {
         weekday: "long",
@@ -156,6 +168,6 @@ function formatDate(timestamp: number): string{
         day: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-        timeZoneName: "short"
+        timeZoneName: "short",
     });
 }

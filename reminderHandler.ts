@@ -6,7 +6,6 @@ export async function handleReminders(agent: BskyAgent){
 
     setInterval(async () => {
         try{
-            //Get the pending reminders
             const pendingReminders = await getPendingReminders();
 
             if(pendingReminders.length === 0){
@@ -15,27 +14,28 @@ export async function handleReminders(agent: BskyAgent){
             }
             
             for (const reminder of pendingReminders){
-                const { userDid, requestId, text, uri, cid } = reminder;
+                const { userHandle, requestId, text, uri, cid } = reminder;
 
-                //Sent notification to the user
-                await sendReminderNotification(agent, userDid, text, uri, cid);
+                await sendReminderNotification(agent, userHandle, text, uri, cid);
 
-                //Mark the reminder as sent
-                await markReminderAsSent(userDid, requestId);
-                console.log(`Reminder ${requestId} marked as sent for user ${userDid}`)
+                await markReminderAsSent(userHandle, requestId);
+                console.log(`Reminder ${requestId} marked as sent for user ${userHandle}`);
             }
         }catch(error){
             console.error("Error in reminder handler:", error);
         }
             
-    }, 60000); //Check every 60 seconds
+    }, 60000); // Check every 60 seconds
 }
 
-async function sendReminderNotification(agent: BskyAgent, userDid: string, text: string, uri: string, cid: string){
+async function sendReminderNotification(agent: BskyAgent, userHandle: string, text: string, uri: string, cid: string){
     try{
-        const message =  `Hey, ChronoDate here! Do you remember this post? ${uri}\n"${text}"`;
+        const postId = extractPostIdFromUri(uri);
+        const profileUrl = `https://bsky.app/profile/${userHandle}`;
+        const postUrl = `${profileUrl}/post/${postId}`;
 
-        //Publish notification in Bluesky
+        const message =  `@${userHandle} Hey, ChronoDate here! Do you remember this post? ${postUrl}\n"${text}"`;
+
         await agent.post({
             text: message,
             reply: {
@@ -49,8 +49,13 @@ async function sendReminderNotification(agent: BskyAgent, userDid: string, text:
                 }
             }
         });
-        console.log(`Reminder sent to user ${userDid}`);
+        console.log(`Reminder sent to user ${userHandle}`);
     }catch(error){
-        console.error(`Error sending reminder to user ${userDid}`, error);
+        console.error(`Error sending reminder to user ${userHandle}`, error);
     }
+}
+
+function extractPostIdFromUri(uri: string): string | null {
+    const parts = uri.split('/');
+    return parts[parts.length - 1] || null;
 }

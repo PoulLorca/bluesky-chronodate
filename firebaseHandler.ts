@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, get, child, update, remove, query, orderByChild, equalTo } from "firebase/database";
+import { getDatabase, ref, set, get, child, update } from "firebase/database";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -18,21 +18,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const database = getDatabase(app);
 
-
-// Write a new record for a user 
-export async function addReminder(userDid: string, requestId: string, data: any): Promise<void>{
-    await set(ref(database, `reminders/${userDid}/${requestId}`), data);
+// Función para sanitizar las claves
+function sanitizeKey(key: string): string {
+    return key.replace(/[.#$[\]/:]/g, '_');
 }
 
+// Escribir un nuevo recordatorio para un usuario
+export async function addReminder(userHandle: string, requestId: string, data: any): Promise<void>{
+    const sanitizedUserHandle = sanitizeKey(userHandle);
+    const sanitizedRequestId = sanitizeKey(requestId);
+    await set(ref(database, `reminders/${sanitizedUserHandle}/${sanitizedRequestId}`), data);
+}
 
-// Verify if the request exists 
-export async function reminderExists(userDid: string, requestId: string): Promise<boolean>{
+// Verificar si el recordatorio existe
+export async function reminderExists(userHandle: string, requestId: string): Promise<boolean>{
+    const sanitizedUserHandle = sanitizeKey(userHandle);
+    const sanitizedRequestId = sanitizeKey(requestId);
     const dbRef = ref(database);
-    const snapshot = await get(child(dbRef, `reminders/${userDid}/${requestId}`));
+    const snapshot = await get(child(dbRef, `reminders/${sanitizedUserHandle}/${sanitizedRequestId}`));
     return snapshot.exists();
 }
 
-//Get the records to notify
+// Obtener los recordatorios pendientes
 export async function getPendingReminders(): Promise<any[]>{
     const remindersRef = ref(database, "reminders");
     const snapshot = await get(remindersRef);
@@ -44,28 +51,31 @@ export async function getPendingReminders(): Promise<any[]>{
     const reminders = snapshot.val();
     const pendingReminders: any[] = [];
 
-    //Filter the pending reminders
-    for (const userDid in reminders){
-        for (const requestId in reminders[userDid]){
-            const reminder = reminders[userDid][requestId];
-            if(!reminders.notificationSent && reminder.timestamp <= Date.now()){
-                pendingReminders.push({ userDid, requestId, ...reminder});
+    // Filtrar los recordatorios pendientes
+    for (const userHandle in reminders){
+        for (const requestId in reminders[userHandle]){
+            const reminder = reminders[userHandle][requestId];
+            if(!reminder.notificationSent && reminder.timestamp <= Date.now()){
+                pendingReminders.push({ userHandle, requestId, ...reminder});
             }
         }
     }
     return pendingReminders;    
 }
 
-//Mark a reminder as sent
-export async function markReminderAsSent(userDid: string, requestId: string): Promise<void>{
-    const reminderRef = ref(database, `reminders/${userDid}/${requestId}`);
+// Marcar un recordatorio como enviado
+export async function markReminderAsSent(userHandle: string, requestId: string): Promise<void>{
+    const sanitizedUserHandle = sanitizeKey(userHandle);
+    const sanitizedRequestId = sanitizeKey(requestId);
+    const reminderRef = ref(database, `reminders/${sanitizedUserHandle}/${sanitizedRequestId}`);
     await update(reminderRef, { notificationSent: true });
 }
 
-//Count active reminders
-export async function countActiveReminders(userDid: string): Promise<number>{
+// Contar los recordatorios activos
+export async function countActiveReminders(userHandle: string): Promise<number>{
+    const sanitizedUserHandle = sanitizeKey(userHandle);
     const dbRef = ref(database);
-    const snapshot = await get(child(dbRef, `reminders/${userDid}`));
+    const snapshot = await get(child(dbRef, `reminders/${sanitizedUserHandle}`));
 
     if(!snapshot.exists()){
         return 0;
@@ -75,5 +85,3 @@ export async function countActiveReminders(userDid: string): Promise<number>{
     const activeReminders = Object.values(reminders).filter((reminder: any) => !reminder.notificationSent);
     return activeReminders.length;
 }
-
-
